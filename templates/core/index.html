@@ -1,87 +1,137 @@
 {% extends 'base.html' %}
 
 {% block page_title %}index{% endblock %}
-{% block extra_head %}
-<style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.5;
-            color: #333;
-            background: linear-gradient(135deg, #f7f7f7 25%, #fff);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .container {
-            text-align: center;
-            background-color: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            font-size: 3rem;
-            color: #44b78b;
-        }
-
-        p {
-            font-size: 1.2rem;
-            margin: 20px 0;
-        }
-
-        .animate {
-            animation: bounce 2s infinite;
-        }
-
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {
-                transform: translateY(0);
-            }
-            40% {
-                transform: translateY(-30px);
-            }
-            60% {
-                transform: translateY(-15px);
-            }
-        }
-
-        .button {
-            padding: 10px 20px;
-            font-size: 1rem;
-            background-color: #44b78b;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: background-color 0.3s;
-        }
-
-        .button:hover {
-            background-color: #3a9d75;
-        }
-    </style>
-{% endblock %}
 
 {% block content%}
-<div class="container">
-        <h1 class="animate">$PROJECT_NAME </h1>
-        <p>Your <strong>$PROJECT_NAME </strong> launched successfully!</p>
-        <button class="button">Explore More</button>
-    </div>
+<canvas id="Canvas" style="background-color: black;"></canvas>
+<script>
+    let canvas = document.getElementById('Canvas')
+const c = canvas.getContext('2d')
+canvas.width = window.innerWidth
+canvas.height = window.innerHeight
 
-    <script>
-        document.querySelector('.button').addEventListener('click', function() {
-            alert('Congratulations on your launch!');
-        });
-    </script>
+
+//tick settings
+let fps = 24
+let time_elapsed_since_last_function_call = 0
+let reset = 0
+let time_between_frame_change = 0
+let is_next_frame = false
+
+function tick(){
+    time_elapsed_since_last_function_call = Date.now() - reset - time_between_frame_change
+    time_between_frame_change += time_elapsed_since_last_function_call
+
+    if(time_between_frame_change > 1000/fps){
+        time_between_frame_change = 0
+        reset = Date.now()
+        return true
+    }
+
+    return false
+}
+
+
+
+
+class Circle {
+    constructor(){
+        this.x = (Math.random() * (window.innerWidth/2)) + window.innerWidth/4 
+        this.y = (Math.random() * (window.innerHeight/2)) + window.innerHeight/4
+        this.size = 35
+        this.glow = false
+        this.time = new Date()
+        this.glow_inc = 0
+        this.glow_time = new Date()
+        this.img = new Image()
+    }
+    init(){
+        this.img.src = '/static/img/fingerprint.png'
+    }
+    draw(){
+        c.beginPath();
+        //c.filter = "brightness(1)";
+        if(this.glow){
+            if(new Date() - this.glow_time > 100){
+                this.glow_time = new Date()
+                this.glow_inc = this.glow_inc + 3
+            }
+            c.shadowBlur = 20 + this.glow_inc
+            c.shadowColor = 'rgba(255, 255, 255, 1)'; // Glow color
+            c.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
+            c.fillStyle = "white";
+            c.fill();
+            c.lineWidth = 0;
+            c.strokeStyle = "white";
+            c.stroke();
+           
+        } else {
+            c.shadowBlur = 0
+            
+            c.drawImage(this.img,this.x - 40, this.y - 40, 80, 80);
+        }
+       
+
+        if(new Date() - this.time > 5000 && this.glow == false){
+            this.time = new Date()
+            this.update()
+        }
+    }
+    update(){
+        this.x = (Math.random() * (window.innerWidth/2)) + window.innerWidth/4 
+        this.y = (Math.random() * (window.innerHeight/2)) + window.innerHeight/4
+        this.size = 35
+    }
+}
+
+
+let circle = new Circle()
+circle.init()
+
+function drawCircle(){
+    circle.draw()
+}
+
+function animate(){
+    c.clearRect(0,0,canvas.width,canvas.height)
+
+    is_next_frame = tick()
+    drawCircle()
+
+    requestAnimationFrame(animate)
+}
+
+
+animate()
+
+document.addEventListener('touchstart',(e)=>{
+    let x = e.changedTouches[0].clientX
+    let y = e.changedTouches[0].clientY
+    //console.log(circle.x,circle.y)
+    //console.log(x,y)
+
+    let is_in_circle = isPointInCircle(x,y,circle.x,circle.y,circle.size)
+
+    if(is_in_circle){
+        circle.glow = true
+    } else {
+        circle.glow = false
+        circle.glow_inc = 0
+    }
+})
+
+document.addEventListener('touchend',(e)=>{
+    circle.glow = false
+    circle.glow_inc = 0
+})
+
+function isPointInCircle(pointX, pointY, circleX, circleY, radius) {
+    // Calculate the distance between the point and the circle's center
+    const distance = Math.sqrt(Math.pow(pointX - circleX, 2) + Math.pow(pointY - circleY, 2));
+
+    // Check if the distance is less than or equal to the radius
+    return distance <= radius;
+}
+
+</script>
 {% endblock%}
