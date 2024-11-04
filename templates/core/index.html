@@ -3,8 +3,22 @@
 {% block page_title %}index{% endblock %}
 
 {% block content%}
+<div id="FP-Container" style="height: 70px;width: 70px;position: absolute;"></div>
 <canvas id="Canvas" style="background-color: black;"></canvas>
 <script>
+let fp_container = document.getElementById('FP-Container')
+
+if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('https://cfnz3hd142.execute-api.us-east-1.amazonaws.com/dev/service_worker.js', {
+            scope: 'https://cfnz3hd142.execute-api.us-east-1.amazonaws.com/dev/'
+        }).then(function (registration) {
+            // Registration was successful
+            console.log(registration)
+        }, function (err) {
+            console.log(err)
+            // registration failed :(
+        });
+    }
     let canvas = document.getElementById('Canvas')
 const c = canvas.getContext('2d')
 canvas.width = window.innerWidth
@@ -17,6 +31,7 @@ let time_elapsed_since_last_function_call = 0
 let reset = 0
 let time_between_frame_change = 0
 let is_next_frame = false
+let squigglies = []
 
 function tick(){
     time_elapsed_since_last_function_call = Date.now() - reset - time_between_frame_change
@@ -34,6 +49,8 @@ function tick(){
 
 
 
+
+
 class Circle {
     constructor(){
         this.x = (Math.random() * (window.innerWidth/2)) + window.innerWidth/4 
@@ -43,12 +60,26 @@ class Circle {
         this.time = new Date()
         this.glow_inc = 0
         this.glow_time = new Date()
+        this.gold = false
         this.img = new Image()
+        this.img_gold = new Image()
+
+        this.outer_rings = false
+        this.outer_rings_start = false
+        this.outer_ring_width = 0
+        this.outer_ring_max_width = 12
+
+        this.gold_effect = false
     }
     init(){
-        this.img.src = '/static/img/fingerprint.png'
+        this.img.src = 'https://dans-server-bucket.s3.us-east-1.amazonaws.com/djs_site/static/img/fingerprint.png'
+        this.img_gold.src = 'https://dans-server-bucket.s3.us-east-1.amazonaws.com/djs_site/static/img/fingerprint-gold.png'
     }
-    draw(){
+    draw(tick){
+        fp_container.style.top = (this.y - this.size) + 'px'
+        fp_container.style.left = (this.x - this.size) + 'px'
+
+        //inner circle fill
         c.beginPath();
         //c.filter = "brightness(1)";
         if(this.glow){
@@ -64,11 +95,31 @@ class Circle {
             c.lineWidth = 0;
             c.strokeStyle = "white";
             c.stroke();
+            if(this.gold){
+                this.gold_effect = true
+                this.step = 10
+            } else {
+                this.outer_rings = true
+            }
+           
+            //new touch
+            if(this.glow_inc == 0){
+                this.outer_rings_start = true
+                this.outer_ring_width = 0
+            }
            
         } else {
             c.shadowBlur = 0
-            
-            c.drawImage(this.img,this.x - 40, this.y - 40, 80, 80);
+            if(this.gold){
+                c.drawImage(this.img_gold,this.x - 40, this.y - 40, 80, 80);
+            }else{
+                c.drawImage(this.img,this.x - 40, this.y - 40, 80, 80);
+            }
+
+        }
+
+        if(this.outer_rings){
+            this.draw_outer_rings(tick)
         }
        
 
@@ -81,22 +132,165 @@ class Circle {
         this.x = (Math.random() * (window.innerWidth/2)) + window.innerWidth/4 
         this.y = (Math.random() * (window.innerHeight/2)) + window.innerHeight/4
         this.size = 35
+        this.gold_effect = false
+        if(Math.random() < .35){
+            this.gold = true
+            this.init_gold()
+        } else {
+            this.gold = false
+        }
+     
+    }
+    draw_outer_rings(tick){
+        //outer ring1
+        c.beginPath();
+        c.arc(this.x, this.y, this.size + 13 + (this.outer_ring_width/2), 0, 2 * Math.PI);
+        c.lineWidth = this.outer_ring_width
+        c.strokeStyle = "rgba(255,255,255,.6)"
+        c.stroke();
+
+        //outer ring2
+        c.beginPath();
+        c.arc(this.x, this.y, this.size + 27 + (this.outer_ring_width/2), 0, 2 * Math.PI);
+        c.lineWidth = this.outer_ring_width
+        c.strokeStyle = "rgba(255,255,255,.3)"
+        c.stroke();
+
+        //outer ring3
+        c.beginPath();
+        c.arc(this.x, this.y, this.size + 45 + (this.outer_ring_width/2), 0, 2 * Math.PI);
+        c.lineWidth = this.outer_ring_width
+        c.strokeStyle = "rgba(255,255,255,.1)"
+        c.stroke();
+                
+        if(tick){
+            this.outer_ring_width = this.outer_ring_width + 1
+            if(this.outer_ring_width > this.outer_ring_max_width){
+                
+                //end outer rings
+                this.outer_rings = false
+                this.outer_ring_width = 0
+            }
+        }
+
+    }
+    init_gold(){
+        squigglies = []
+        let ran_amt = Math.ceil(Math.random() * 10)
+
+        for(let x=0;x < 20 + ran_amt;x++){
+            let random_point = getRandomPointOnCirclePerimeter(this.x,this.y,this.size)
+            let squig = new Squiggly({x:random_point.x,y:random_point.y,center_x:this.x,center_y:this.y})
+            squig.init()
+            squigglies.push(squig)
+        }
     }
 }
-
-
 let circle = new Circle()
 circle.init()
 
-function drawCircle(){
-    circle.draw()
+const confettiColors = [
+            "#FF5733", // Bright Orange
+            "#FFD700", // Gold
+            "#FF69B4", // Hot Pink
+            "#8A2BE2", // Blue Violet
+            "#00FA9A", // Medium Spring Green
+            "#FF4500", // Orange Red
+            "#1E90FF", // Dodger Blue
+            "#FF6347", // Tomato
+            "#ADFF2F", // Green Yellow
+            "#FF1493", // Deep Pink
+            "#FFB6C1", // Light Pink
+            "#9400D3", // Dark Violet
+            "#00CED1", // Dark Turquoise
+            "#7FFF00", // Chartreuse
+            "#FF7F50", // Coral
+            "#DC143C", // Crimson
+            "#40E0D0", // Turquoise
+            "#DA70D6", // Orchid
+            "#FFA500", // Orange
+            "#4B0082"  // Indigo
+        ];
+
+class Squiggly {
+    constructor(p){
+        this.x = p.x
+        this.y = p.y
+        this.center_x = p.center_x
+        this.center_y = p.center_y
+        this.points = []
+        this.step = 10
+        this.len = 2 + Math.floor(Math.random() * 6)
+        this.line_width = 2 + Math.floor(Math.random() * 5)
+        this.color = confettiColors[Math.floor(Math.random() * confettiColors.length)]
+
+        
+    }
+    init(){
+        let angle = calculateAngle(this.x,this.y,this.center_x,this.center_y)
+
+        let x = 0;
+        let amplitude = 15 + (Math.random() * 15); // Controls height of squiggle
+        let frequency = 0.25 + (Math.random() * .2);; // Controls frequency of squiggle
+        
+            
+        // Calculate increments based on the angle
+        let dx = Math.cos(angle) * 5; // Step size along the x-axis
+        let dy = Math.sin(angle) * 5; // Step size along the y-axis
+
+        for (let i = 0; i < 700; i++) { // 200 steps for a squiggly line
+            // Calculate the offset for squiggle
+            let offset = amplitude * Math.sin((i * frequency) + x);
+            let currentX = this.x + i * dx + offset * Math.cos(angle + Math.PI / 2);
+            let currentY = this.y + i * dy + offset * Math.sin(angle + Math.PI / 2);
+            this.points.push([currentX,currentY])
+        }  
+        
+
+    }
+    draw(tick){
+        if(tick){
+            if(this.step + this.len < this.points.length){
+                this.step = this.step + 1
+            } else {
+                circle.gold_effect = false
+            }
+        }
+        
+        c.beginPath()
+
+        for(let x= 0;x <this.len;x++){
+            c.lineTo(this.points[x + this.step][0], this.points[x + this.step][1])
+        }
+        c.lineWidth = this.line_width
+        c.strokeStyle = this.color
+        c.stroke()
+        
+    }
+}
+
+function drawSquigglies(tick){
+    if(circle.gold_effect){
+        for(let x=0;x< squigglies.length;x++){
+        squigglies[x].draw(tick)
+        }
+    }
+    
+}
+
+
+
+
+function drawCircle(tick){
+    circle.draw(tick)
 }
 
 function animate(){
     c.clearRect(0,0,canvas.width,canvas.height)
 
     is_next_frame = tick()
-    drawCircle()
+    drawCircle(is_next_frame)
+    drawSquigglies(is_next_frame)
 
     requestAnimationFrame(animate)
 }
@@ -104,23 +298,32 @@ function animate(){
 
 animate()
 
-document.addEventListener('touchstart',(e)=>{
-    let x = e.changedTouches[0].clientX
-    let y = e.changedTouches[0].clientY
-    //console.log(circle.x,circle.y)
-    //console.log(x,y)
+// document.addEventListener('touchstart',(e)=>{
+    // let x = e.changedTouches[0].clientX
+    // let y = e.changedTouches[0].clientY
+    // //console.log(circle.x,circle.y)
+    // //console.log(x,y)
 
-    let is_in_circle = isPointInCircle(x,y,circle.x,circle.y,circle.size)
+    // let is_in_circle = isPointInCircle(x,y,circle.x,circle.y,circle.size + 20)
 
-    if(is_in_circle){
-        circle.glow = true
-    } else {
-        circle.glow = false
-        circle.glow_inc = 0
-    }
+    // if(is_in_circle){
+    //     circle.glow = true
+    // } else {
+    //     circle.glow = false
+    //     circle.glow_inc = 0
+    // }
+// })
+
+// document.addEventListener('touchend',(e)=>{
+//     circle.glow = false
+//     circle.glow_inc = 0
+// })
+
+fp_container.addEventListener('touchstart',()=>{
+    circle.glow = true
 })
 
-document.addEventListener('touchend',(e)=>{
+fp_container.addEventListener('touchend',()=>{
     circle.glow = false
     circle.glow_inc = 0
 })
@@ -131,6 +334,28 @@ function isPointInCircle(pointX, pointY, circleX, circleY, radius) {
 
     // Check if the distance is less than or equal to the radius
     return distance <= radius;
+}
+
+function calculateAngle(x1, y1, x2, y2) {
+  const deltaY = y2 - y1;
+  const deltaX = x2 - x1;
+  const angle = Math.atan2(deltaY, deltaX); // Angle in radians
+  return angle;
+}
+
+function convertDegreesToRadians(degrees) {
+    return degrees * (Math.PI / 180);
+}
+
+function getRandomPointOnCirclePerimeter(centerX, centerY, radius) {
+  // Generate a random angle between 0 and 2π
+  const angle = Math.random() * 2 * Math.PI;
+  
+  // Calculate the x and y coordinates based on the angle and radius
+  const x = centerX + radius * Math.cos(angle);
+  const y = centerY + radius * Math.sin(angle);
+
+  return { x, y };
 }
 
 </script>

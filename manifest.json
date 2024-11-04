@@ -1,0 +1,17 @@
+{
+    "name": "Lio app",
+    "short_name": "Lio app",
+    "description": "fingerprint game",
+    "start_url": "/",
+    "display": "fullscreen",
+    "scope": "/",
+    "orientation": "any",
+    "background_color": "#ffffff",
+    "theme_color": "#0A0302",
+    "status_bar": "default",
+    "icons": [{"src": "https://dans-server-bucket.s3.us-east-1.amazonaws.com/djs_site/static/img/fingerprint_160x160.png", "sizes": "160x160"}],
+    "dir": "ltr",
+    "lang": "en-US",
+    "screenshots" : [{"src": "https://dans-server-bucket.s3.us-east-1.amazonaws.com/djs_site/static/img/fingerprint_750x1334.png", "sizes": "750x1334", "type": "image/png"}],
+    "shortcuts" : []
+  }

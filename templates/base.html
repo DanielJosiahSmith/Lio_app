@@ -3,16 +3,17 @@
 
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="overflow: hidden;">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>{% block page_title %}{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="manifest" href="https://dans-server-bucket.s3.us-east-1.amazonaws.com/djs_site/static/js/manifest.json">
     {% progressive_web_app_meta %}
     {% block extra_head %}{% endblock %}
 </head>
-<body style="width: 100vw;height: 100vh; overflow: hidden;">
+<body style="width: 100vw;height: 100vh; overflow: hidden;margin: 0;">
     {% block content %}{% endblock %}
 </body>
 <!-- <script src="{% static 'js/settings.js' %}"></script>

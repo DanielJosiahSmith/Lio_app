@@ -137,19 +137,19 @@ PWA_APP_START_URL = '/'
 PWA_APP_STATUS_BAR_COLOR = 'default'
 PWA_APP_ICONS = [
     {
-        'src': '/static/img/fingerprint_160x160.png',
+        'src': 'https://dans-server-bucket.s3.us-east-1.amazonaws.com/djs_site/static/img/fingerprint_160x160.png',
         'sizes': '160x160'
     }
 ]
 PWA_APP_ICONS_APPLE = [
     {
-        'src': '/static/img/fingerprint_160x160.png',
+        'src': 'https://dans-server-bucket.s3.us-east-1.amazonaws.com/djs_site/static/img/fingerprint_160x160.png',
         'sizes': '160x160'
     }
 ]
 PWA_APP_SPLASH_SCREEN = [
     {
-        'src': '/static/img/fingerprint_640x1136.png',
+        'src': 'https://dans-server-bucket.s3.us-east-1.amazonaws.com/djs_site/static/img/fingerprint_640x1136.png',
         'media': '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)'
     }
 ]
@@ -164,8 +164,10 @@ PWA_APP_LANG = 'en-US'
 # ]
 PWA_APP_SCREENSHOTS = [
     {
-      'src': '/static/img/fingerprint_750x1334.png',
+      'src': 'https://dans-server-bucket.s3.us-east-1.amazonaws.com/djs_site/static/img/fingerprint_750x1334.png',
       'sizes': '750x1334',
       "type": "image/png"
     }
 ]
+
+PWA_SERVICE_WORKER_PATH = 'service_worker.js'
